@@ -1,0 +1,1 @@
+export default function Logout(){return <div className="signin-shell"><div className="signin-card"><h1>Sign out?</h1><p>Your shared links will keep working.</p><form action="/api/logout" method="post"><button className="button primary wide">Sign out</button></form><a href="/">Back to workspace</a></div></div>}
