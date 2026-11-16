@@ -31,7 +31,7 @@ try {
   const badHeader = await call('/api/links', 'POST', {destination:'https://example.com'}, {Cookie:'','X-Shortly-Request':''}); check(badHeader.status === 403, 'public creation still requires the write header');
   const attempts = await Promise.all(Array.from({length:12}, () => call('/api/links', 'POST', {slug:guestLink.slug,destination:'https://example.com'}, {Cookie:''})));
   check(attempts.filter(r => r.status === 409).length === 9 && attempts.filter(r => r.status === 429).length === 3, 'guest creation limits are enforced atomically under concurrent requests');
-  let r = await call("/"); check(r.status === 200 && (await r.text()).includes("Keep it short."), "dashboard serves successfully");
+  let r = await call("/"); check(r.status === 200 && (await r.text()).includes("More sharing."), "dashboard serves successfully");
   r = await call("/api/links", "POST", { slug, title: "Integration test", destination: "https://example.com/long/path?test=one#section" });
   check(r.status === 201, "creates a custom short link"); cleanup.add(slug);
   const record = (await r.json()).link; check(record.slug === slug && record.clicks === 0 && record.active === 1, "new link starts active with zero clicks");
