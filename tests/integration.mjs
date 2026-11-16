@@ -16,7 +16,7 @@ try {
   let anonymous = await call('/api/links'); check(anonymous.status === 401, 'anonymous management is blocked');
   const forged = await call('/api/links','GET',undefined,{'oai-authenticated-user-id':'owner','oai-authenticated-user-email':'owner@example.com'}); check(forged.status===401,'forged identity headers are ignored');
   const login = await call('/api/login','POST',{password:process.env.SHORTLY_ADMIN_PASSWORD}); check(login.status===200,'owner can sign in'); cookie=(login.headers.get('set-cookie')||'').split(';')[0];
-  let r = await call("/"); check(r.status === 200 && (await r.text()).includes("A little link goes a long way"), "dashboard serves successfully");
+  let r = await call("/"); check(r.status === 200 && (await r.text()).includes("Keep it short."), "dashboard serves successfully");
   r = await call("/api/links", "POST", { slug, title: "Integration test", destination: "https://example.com/long/path?test=one#section" });
   check(r.status === 201, "creates a custom short link"); cleanup.add(slug);
   const record = (await r.json()).link; check(record.slug === slug && record.clicks === 0 && record.active === 1, "new link starts active with zero clicks");
