@@ -2,7 +2,7 @@
 
 A public link shortener with a private owner dashboard. Built with Next.js for Vercel.
 
-Create random or custom short links, change destinations, pause/resume/delete, see aggregate click counts, download QR codes, search, sort and export JSON. Visitors can create and share links without an account or password. The owner signs in at /login to list, edit, pause, delete and export links. Guest visitors cannot list or manage any saved links, including their own; they should copy their link before leaving.
+Create random or custom short links, change destinations, pause/resume/delete, see aggregate click counts, download QR codes, search, sort and export JSON. Visitors can create and share links without an account or password. The owner signs in at /login to list, edit, pause, delete and export links. Guest visitors cannot enumerate or manage server records. Their last 20 created links are remembered only in the current browser, with result restoration, copy, QR and text download. Recent history is not synced; clearing browser data removes it. Removing a recent entry does not delete the shared link. Storage failures are shown explicitly and the current result remains available to copy or download.
 
 ## Deploy to Vercel
 
