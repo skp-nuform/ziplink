@@ -20,12 +20,15 @@ try {
   r = await call("/api/links", "POST", { slug, title: "Integration test", destination: "https://example.com/long/path?test=one#section" });
   check(r.status === 201, "creates a custom short link"); cleanup.add(slug);
   const record = (await r.json()).link; check(record.slug === slug && record.clicks === 0 && record.active === 1, "new link starts active with zero clicks");
-  r = await call(`/s/${slug}`); check(r.status === 302 && r.headers.get("location") === record.destination, "redirect preserves destination, query and fragment");
+  r = await call(`/${slug}`); check(r.status === 302 && r.headers.get("location") === record.destination, "redirect preserves destination, query and fragment");
   check(r.headers.get("cache-control") === "no-store", "redirect isn't cached");
   check((await row(slug)).clicks === 1, "redirect increments click count");
-  r = await call(`/s/${slug}`, "HEAD"); check(r.status === 302 && (await row(slug)).clicks === 1, "HEAD requests do not inflate clicks");
-  await Promise.all(Array.from({ length: 6 }, () => call(`/s/${slug}`))); check((await row(slug)).clicks === 7, "concurrent visits increment atomically");
+  r = await call(`/${slug}`, "HEAD"); check(r.status === 302 && (await row(slug)).clicks === 1, "HEAD requests do not inflate clicks");
+  r = await call(`/s/${slug}`, "HEAD"); check(r.status === 302 && r.headers.get("location") === record.destination && (await row(slug)).clicks === 1, "old /s/ links still resolve without changing codes");
+  await Promise.all(Array.from({ length: 6 }, () => call(`/${slug}`))); check((await row(slug)).clicks === 7, "concurrent visits increment atomically");
   r = await call("/api/links", "POST", { slug, destination: "https://example.org/" }); check(r.status === 409, "duplicate ending is rejected");
+  for (const reserved of ["api", "logout", "login"]) { r = await call("/api/links", "POST", {slug:reserved,destination:"https://example.com"}); check(r.status === 409, `rejects reserved ending ${reserved}`); }
+  r = await call("/logout"); check(r.status===200 && (await r.text()).includes("Sign out?"), "logout page is not intercepted by short links");
   for (const destination of ["javascript:alert(1)", "data:text/html,hello", "file:///C:/test", "https://user:password@example.com", base + "/s/test"]) {
     r = await call("/api/links", "POST", { destination }); check(r.status === 400, `rejects unsafe destination ${destination.split(":")[0]}`);
   }
@@ -37,12 +40,14 @@ try {
   r = await fetch(base + "/api/links", { method: "POST", headers: { "Content-Type": "application/json", "X-Shortly-Request": "1", Cookie: cookie }, body: "{" }); check(r.status === 400, "malformed JSON has a friendly error");
   r = await call("/api/links", "POST", { destination: "https://example.com", title: "x".repeat(10000) }); check(r.status === 413, "oversized requests are rejected");
   r = await call(`/api/links/${slug}`, "PATCH", { destination: "https://example.org/updated", title: "Updated" }); check(r.status === 200, "edits destination and title");
-  r = await call(`/s/${slug}`); check(r.headers.get("location") === "https://example.org/updated", "same short address uses edited destination");
-  await call(`/api/links/${slug}`, "PATCH", { active: false }); r = await call(`/s/${slug}`); check(r.status === 404 && (await row(slug)).clicks === 8, "paused link stops redirecting and counting");
-  await call(`/api/links/${slug}`, "PATCH", { active: true }); r = await call(`/s/${slug}`); check(r.status === 302, "resumed link redirects again");
-  r = await call("/api/links", "POST", { destination: "https://example.com/auto" }); const auto = (await r.json()).link; cleanup.add(auto.slug); check(r.status === 201 && /^[a-z0-9]{7}$/.test(auto.slug), "generates a random ending when omitted");
+  r = await call(`/${slug}`); check(r.headers.get("location") === "https://example.org/updated", "same short address uses edited destination");
+  await call(`/api/links/${slug}`, "PATCH", { active: false }); r = await call(`/${slug}`); check(r.status === 404 && (await row(slug)).clicks === 8, "paused link stops redirecting and counting");
+  r = await call(`/s/${slug}`); check(r.status===404, "pausing also disables the old /s/ address");
+  await call(`/api/links/${slug}`, "PATCH", { active: true }); r = await call(`/${slug}`); check(r.status === 302, "resumed link redirects again");
+  r = await call("/api/links", "POST", { destination: "https://example.com/auto" }); const auto = (await r.json()).link; cleanup.add(auto.slug); check(r.status === 201 && /^[a-z0-9]{4}$/.test(auto.slug), "generates a four-character ending when omitted");
+  r = await fetch(base + "/" + auto.slug, {redirect:"manual"}); check(r.status===302 && r.headers.get("location")==="https://example.com/auto", "four-character root links work without signing in"); await r.arrayBuffer();
   r = await call(`/api/links/${slug}`, "DELETE"); check(r.status === 200 && !(await row(slug)), "deletes a saved link"); cleanup.delete(slug);
-  r = await call(`/s/${slug}`); check(r.status === 404 && (await r.text()).includes("This link is unavailable"), "deleted link shows a helpful missing page");
+  r = await call(`/${slug}`); check(r.status === 404 && (await r.text()).includes("This link is unavailable"), "deleted link shows a helpful missing page");
   r = await call(`/api/links/${slug}`, "PATCH", { title: "Missing" }); check(r.status === 404, "editing a missing link returns 404");
   console.log(`\n${checks} checks passed. Test records are removed below.`);
 } finally { for (const item of cleanup) await call(`/api/links/${item}`, "DELETE"); }

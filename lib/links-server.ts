@@ -1,3 +1,4 @@
+import { randomInt } from "node:crypto";
 export { database } from "./database";
 import { ownerAccess } from "./authorization";
 
@@ -65,7 +66,7 @@ export function validateSlug(value: unknown) {
 }
 export function randomSlug() {
   const alphabet = "abcdefghjkmnpqrstuvwxyz23456789";
-  return Array.from(crypto.getRandomValues(new Uint8Array(7)), b => alphabet[b % alphabet.length]).join("");
+  return Array.from({ length: 4 }, () => alphabet[randomInt(alphabet.length)]).join("");
 }
 export function routeError(error: unknown) {
   if (error instanceof InputError) return json({ error: error.message }, error.status);

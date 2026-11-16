@@ -9,7 +9,7 @@ Create random or custom short links, change destinations, pause/resume/delete, s
 1. Import the GitHub repository. Framework: Next.js; root directory: repository root. Node: 24.x. Build: npm run build. Do not override output directory.
 2. Under Storage, add a **free Neon Postgres** database and connect it to this project. The integration supplies DATABASE_URL. Do not enable paid upgrades.
 3. In Environment Variables, set SHORTLY_ADMIN_PASSWORD to a unique password of 24–256 characters. Keep it in a password manager. Do not put it in source control or a NEXT_PUBLIC_ variable. Set it in Production; use separate credentials/databases for Preview.
-4. Redeploy after setting the variables. Tables are created automatically on first use. Open the assigned vercel.app address and sign in. Short links use /s/your-ending and are public.
+4. Redeploy after setting the variables. Tables are created automatically on first use. Open the assigned vercel.app address and sign in. Short links use /your-ending and are public. Automatically generated endings are four characters. Previously shared /s/ links keep working, including old QR codes. Existing codes are not renamed. App paths such as api and logout cannot be used as new custom endings.
 
 The app fails closed if the password is missing or too short. No one can claim the workspace. Changing the password invalidates all existing sessions. Sessions expire in seven days. Login attempts are limited in the database; raw visitor IPs are not saved.
 

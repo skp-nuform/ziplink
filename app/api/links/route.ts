@@ -1,3 +1,4 @@
+import { isReservedSlug } from "@/lib/link-address";
 import { body, database, guard, InputError, json, randomSlug, routeError, validateDestination, validateSlug, validateTitle } from "@/lib/links-server";
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,7 @@ export async function POST(request: Request) {
     const title = validateTitle(input.title, destination);
     const custom = input.slug !== undefined && input.slug !== "";
     const chosen = custom ? validateSlug(input.slug) : null;
+    if (chosen && isReservedSlug(chosen)) throw new InputError("That ending is reserved for the app. Choose another one.", 409);
     const db = database();
     const now = Date.now();
     const counts = await db.prepare("SELECT COUNT(*) AS total, SUM(CASE WHEN created_at > ? THEN 1 ELSE 0 END) AS recent FROM links").bind(now - 60_000).first<{ total: number; recent: number }>();
