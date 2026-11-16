@@ -1,5 +1,7 @@
 import { isReservedSlug } from "@/lib/link-address";
-import { body, database, guard, InputError, json, randomSlug, routeError, validateDestination, validateSlug, validateTitle } from "@/lib/links-server";
+import { ownerAccess } from "@/lib/authorization";
+import { limitCreation } from "@/lib/creation-limit";
+import { body, database, guard, requestGuard, InputError, json, randomSlug, routeError, validateDestination, validateSlug, validateTitle } from "@/lib/links-server";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
@@ -12,17 +14,18 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    requestGuard(request, true);
     const input = await body(request);
-    guard(request, true);
     const destination = validateDestination(input.destination, new URL(request.url).origin);
     const title = validateTitle(input.title, destination);
     const custom = input.slug !== undefined && input.slug !== "";
     const chosen = custom ? validateSlug(input.slug) : null;
     if (chosen && isReservedSlug(chosen)) throw new InputError("That ending is reserved for the app. Choose another one.", 409);
+    await limitCreation(request, ownerAccess(request.headers));
     const db = database();
     const now = Date.now();
     const counts = await db.prepare("SELECT COUNT(*) AS total, SUM(CASE WHEN created_at > ? THEN 1 ELSE 0 END) AS recent FROM links").bind(now - 60_000).first<{ total: number; recent: number }>();
-    if ((counts?.total ?? 0) >= 5000) throw new InputError("This workspace holds up to 5,000 links. Export your links before making room.", 429);
+    if ((counts?.total ?? 0) >= 5000) throw new InputError("This service has reached its link capacity. Please try again later.", 429);
     if ((counts?.recent ?? 0) >= 30) throw new InputError("You've made lots of links. Please wait one minute and try again.", 429);
     for (let attempt = 0; attempt < 5; attempt++) {
       const slug = chosen || randomSlug();

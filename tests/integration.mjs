@@ -16,6 +16,21 @@ try {
   let anonymous = await call('/api/links'); check(anonymous.status === 401, 'anonymous management is blocked');
   const forged = await call('/api/links','GET',undefined,{'oai-authenticated-user-id':'owner','oai-authenticated-user-email':'owner@example.com'}); check(forged.status===401,'forged identity headers are ignored');
   const login = await call('/api/login','POST',{password:process.env.SHORTLY_ADMIN_PASSWORD}); check(login.status===200,'owner can sign in'); cookie=(login.headers.get('set-cookie')||'').split(';')[0];
+  const publicHome = await call('/', 'GET', undefined, { Cookie: '' }); const publicHtml = await publicHome.text();
+  check(publicHome.status === 200 && publicHtml.includes('Where should your link go?') && !publicHtml.includes('id="password"'), 'visitors see the shortener without a password');
+  check(!publicHtml.includes('Search your links') && !publicHtml.includes('Go to My links'), 'public homepage does not expose the owner dashboard');
+  const ownerPage = await call('/login', 'GET', undefined, { Cookie: '' }); check(ownerPage.status === 200 && (await ownerPage.text()).includes('Your password'), 'owner sign-in remains available separately');
+  const guest = await call('/api/links', 'POST', { destination:'https://example.com/public-test' }, { Cookie: '' });
+  const guestLink = (await guest.json()).link; check(guest.status === 201 && /^[a-z0-9]{4}$/.test(guestLink?.slug), 'visitors can create a four-character link without signing in'); cleanup.add(guestLink.slug);
+  check((await call('/' + guestLink.slug, 'HEAD', undefined, { Cookie: '' })).headers.get('location') === 'https://example.com/public-test', 'guest-created links redirect publicly');
+  for (const method of ['PATCH', 'DELETE']) {
+    const denied = await call('/api/links/' + guestLink.slug, method, {title:'Unauthorized'}, {Cookie:''});
+    check(denied.status === 401, 'anonymous ' + method + ' remains blocked even for guest-created links');
+  }
+  const badOrigin = await call('/api/links', 'POST', {destination:'https://example.com'}, {Cookie:'',Origin:'https://untrusted.example'}); check(badOrigin.status === 403, 'public creation still blocks cross-origin writes');
+  const badHeader = await call('/api/links', 'POST', {destination:'https://example.com'}, {Cookie:'','X-Shortly-Request':''}); check(badHeader.status === 403, 'public creation still requires the write header');
+  const attempts = await Promise.all(Array.from({length:12}, () => call('/api/links', 'POST', {slug:guestLink.slug,destination:'https://example.com'}, {Cookie:''})));
+  check(attempts.filter(r => r.status === 409).length === 9 && attempts.filter(r => r.status === 429).length === 3, 'guest creation limits are enforced atomically under concurrent requests');
   let r = await call("/"); check(r.status === 200 && (await r.text()).includes("Keep it short."), "dashboard serves successfully");
   r = await call("/api/links", "POST", { slug, title: "Integration test", destination: "https://example.com/long/path?test=one#section" });
   check(r.status === 201, "creates a custom short link"); cleanup.add(slug);

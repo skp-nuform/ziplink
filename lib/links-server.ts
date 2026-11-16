@@ -10,11 +10,14 @@ export class InputError extends Error {
   constructor(message: string, public status = 400) { super(message); }
 }
 export function guard(request: Request, write = false) {
-  const url = new URL(request.url);
   if (!ownerAccess(request.headers)) throw new InputError("Sign in to manage your links.", 401);
+  requestGuard(request, write);
+}
+export function requestGuard(request: Request, write = false) {
+  const url = new URL(request.url);
   const origin = request.headers.get("origin");
   if ((origin && origin !== url.origin) || request.headers.get("sec-fetch-site") === "cross-site") {
-    throw new InputError("Open Shortly directly to manage your links.", 403);
+    throw new InputError("Open Shortly directly to use your links.", 403);
   }
   if (write && request.headers.get("x-shortly-request") !== "1") {
     throw new InputError("This request is not allowed.", 403);

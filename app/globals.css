@@ -13,3 +13,4 @@ main{min-width:0}.create-page{max-width:664px;margin:0 auto;padding:70px 24px 60
 @media(max-width:360px){.create-page,.library-page{padding-left:16px;padding-right:16px}.composer{padding:20px 16px}.brand{font-size:23px}.header-inner{padding:0 16px}.library-heading>.button{font-size:11px;padding:10px}.stats>div{padding:0 12px}.link-meta{gap:8px}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
 .password-input{position:relative;margin:10px 0 16px}.password-input input{padding-right:48px}.password-input .icon-button{position:absolute;right:2px;top:2px}.signin-note .error-message{margin-bottom:16px}
+.back-to-shorten{display:block;font-size:12px;color:#5e735f;margin:-15px 0 28px}.guest-mode .create-page{padding-bottom:40px}

@@ -5,7 +5,8 @@ type Row = Record<string, unknown>;
 const schema = [
   'CREATE TABLE IF NOT EXISTS links (slug TEXT PRIMARY KEY, destination TEXT NOT NULL, title TEXT NOT NULL, created_at DOUBLE PRECISION NOT NULL, clicks INTEGER NOT NULL DEFAULT 0, active INTEGER NOT NULL DEFAULT 1)',
   'CREATE INDEX IF NOT EXISTS links_created_at ON links(created_at)',
-  'CREATE TABLE IF NOT EXISTS login_attempts (bucket TEXT PRIMARY KEY, attempts INTEGER NOT NULL, expires_at DOUBLE PRECISION NOT NULL)'
+  'CREATE TABLE IF NOT EXISTS login_attempts (bucket TEXT PRIMARY KEY, attempts INTEGER NOT NULL, expires_at DOUBLE PRECISION NOT NULL)',
+  'CREATE TABLE IF NOT EXISTS creation_limits (bucket TEXT PRIMARY KEY, attempts INTEGER NOT NULL, expires_at DOUBLE PRECISION NOT NULL)'
 ];
 let ready: Promise<void> | undefined;
 let localDb: import('node:sqlite').DatabaseSync | undefined;
