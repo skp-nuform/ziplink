@@ -4,8 +4,6 @@ A private link workspace with public short links. Built with Next.js for Vercel.
 
 Create random or custom short links, change destinations, pause/resume/delete, see aggregate click counts, download QR codes, search, sort and export JSON. Visitors need no account. Management requires the owner's password.
 
-Live workspace: https://zpsk.vercel.app. The original ziplink-lime.vercel.app address and old /s/ links remain supported. The dashboard uses Vercel's shortest production hostname for sharing, including when opened from another alias.
-
 ## Deploy to Vercel
 
 1. Import the GitHub repository. Framework: Next.js; root directory: repository root. Node: 24.x. Build: npm run build. Do not override output directory.
